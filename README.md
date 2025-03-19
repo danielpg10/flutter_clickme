@@ -1,16 +1,8 @@
-# flutter_clickme
+# 🚀 Flutter ClickMe  
 
-A new Flutter project.
+Flutter ClickMe es una aplicación desarrollada por **Daniel Gómez** para gestionar y compartir mis enlaces personales en un solo perfil con un diseño moderno.  
 
-## Getting Started
-
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## 🚀 Instalación  
+1. Clona el repositorio:  
+   ```sh
+   git clone https://github.com/danielpg10/flutter_clickme.git
