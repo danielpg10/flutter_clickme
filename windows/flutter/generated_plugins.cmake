@@ -3,6 +3,10 @@
 #
 
 list(APPEND FLUTTER_PLUGIN_LIST
+<<<<<<< HEAD
+=======
+  url_launcher_windows
+>>>>>>> 11cad6d (feat: implementación de diseño y gestión de enlaces)
 )
 
 list(APPEND FLUTTER_FFI_PLUGIN_LIST

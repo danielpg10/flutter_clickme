@@ -13,7 +13,11 @@ import 'package:flutter_clickme/main.dart';
 void main() {
   testWidgets('Counter increments smoke test', (WidgetTester tester) async {
     // Build our app and trigger a frame.
+<<<<<<< HEAD
     await tester.pumpWidget(const MyApp());
+=======
+    await tester.pumpWidget(const ClickMeApp());
+>>>>>>> 11cad6d (feat: implementación de diseño y gestión de enlaces)
 
     // Verify that our counter starts at 0.
     expect(find.text('0'), findsOneWidget);
