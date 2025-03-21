@@ -1,5 +1,7 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'dart:io' show Platform;
 
 class AnimatedBackground extends StatefulWidget {
   final Widget child;
@@ -14,44 +16,59 @@ class AnimatedBackground extends StatefulWidget {
 }
 
 class _AnimatedBackgroundState extends State<AnimatedBackground> with TickerProviderStateMixin {
-  late final AnimationController _controller;
+  late AnimationController _waveController;
+  late AnimationController _particleController;
+  late AnimationController _nebulaController;
   final List<ParticleModel> particles = [];
+  bool isLowPerformanceDevice = false;
   
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
+    
+    if (!kIsWeb) {
+      isLowPerformanceDevice = Platform.isAndroid || Platform.isIOS;
+    }
+    
+    _waveController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 30),
+    )..repeat(reverse: false);
+    
+    _particleController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 15),
-    )..repeat();
+    )..repeat(reverse: false);
+    
+    _nebulaController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 60),
+    )..repeat(reverse: false);
     
     final random = Random();
+    final particleCount = isLowPerformanceDevice ? 30 : 60;
     
-    for (int i = 0; i < 40; i++) {
-      final isLarge = random.nextDouble() > 0.7;
-      final colorOptions = [
-        const Color(0xFFB026FF),
-        const Color(0xFF7B2CBF),
-        const Color(0xFF5A189A),
-        const Color(0xFF3C096C),
-        const Color(0xFF240046), 
-      ];
-      
-      final selectedColor = colorOptions[random.nextInt(colorOptions.length)];
+    for (int i = 0; i < particleCount; i++) {
+      final isLarger = random.nextDouble() > 0.85;
       
       particles.add(
         ParticleModel(
           position: Offset(
             random.nextDouble() * 1000,
-            random.nextDouble() * 2000,
+            random.nextDouble() * 1000,
           ),
           speed: Offset(
-            (random.nextDouble() * 0.8 - 0.4) * (isLarge ? 0.5 : 1.0),
-            (random.nextDouble() * 0.8 - 0.4) * (isLarge ? 0.5 : 1.0),
+            (random.nextDouble() * 0.3 - 0.15) * (isLarger ? 0.7 : 1.0),
+            (random.nextDouble() * 0.3 - 0.15) * (isLarger ? 0.7 : 1.0),
           ),
-          radius: isLarge ? random.nextDouble() * 15 + 10 : random.nextDouble() * 5 + 2,
-          color: selectedColor.withOpacity(random.nextDouble() * 0.4 + 0.2),
-          blur: random.nextDouble() * 5 + 2,
+          radius: isLarger 
+              ? random.nextDouble() * 2.5 + 1.5 
+              : random.nextDouble() * 1.5 + 0.5,
+          color: Colors.white.withOpacity(
+            isLarger 
+                ? random.nextDouble() * 0.2 + 0.15
+                : random.nextDouble() * 0.3 + 0.1
+          ),
         ),
       );
     }
@@ -59,7 +76,9 @@ class _AnimatedBackgroundState extends State<AnimatedBackground> with TickerProv
 
   @override
   void dispose() {
-    _controller.dispose();
+    _waveController.dispose();
+    _particleController.dispose();
+    _nebulaController.dispose();
     super.dispose();
   }
 
@@ -69,39 +88,74 @@ class _AnimatedBackgroundState extends State<AnimatedBackground> with TickerProv
       children: [
         Container(
           decoration: const BoxDecoration(
-            gradient: RadialGradient(
-              center: Alignment(0.5, 0.3),
-              radius: 1.2,
-              colors: [
-                Color(0xFF8A2BE2),
-                Color(0xFF111927),
-              ],
-              stops: [0.0, 0.7],
-            ),
+            color: Color(0xFF0A0A1A),
           ),
         ),
-        Container(
-          decoration: const BoxDecoration(
-            gradient: RadialGradient(
-              center: Alignment(0.8, 0.8),
-              radius: 1.0,
-              colors: [
-                Color(0xFF111927),
-                Color(0xFF111927),
-              ],
-              stops: [0.0, 0.5],
-            ),
-          ),
-        ),
+        
         AnimatedBuilder(
-          animation: _controller,
+          animation: _waveController,
           builder: (context, _) {
-            return CustomPaint(
-              painter: ParticlePainter(particles, _controller.value),
-              child: Container(),
+            return Stack(
+              children: [
+                Container(
+                  decoration: BoxDecoration(
+                    gradient: RadialGradient(
+                      center: Alignment(-0.5, -0.6),
+                      radius: 1.0,
+                      colors: const [
+                        Color(0xFF3A0CA3),
+                        Color(0xFF0A0A1A),
+                      ],
+                      stops: const [0.0, 0.7],
+                    ),
+                  ),
+                ),
+                
+                Positioned.fill(
+                  child: Opacity(
+                    opacity: 0.7,
+                    child: CustomPaint(
+                      painter: SubtleGradientPainter(
+                        animation: _waveController.value,
+                        isLowPerformance: isLowPerformanceDevice,
+                      ),
+                    ),
+                  ),
+                ),
+                
+                AnimatedBuilder(
+                  animation: _nebulaController,
+                  builder: (context, _) {
+                    return Positioned.fill(
+                      child: CustomPaint(
+                        painter: NebulaPainter(
+                          animation: _nebulaController.value,
+                          isLowPerformance: isLowPerformanceDevice,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                
+                AnimatedBuilder(
+                  animation: _particleController,
+                  builder: (context, _) {
+                    return Positioned.fill(
+                      child: CustomPaint(
+                        painter: ParticlePainter(
+                          particles: particles,
+                          animation: _particleController.value,
+                          isLowPerformance: isLowPerformanceDevice,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ],
             );
           },
         ),
+        
         widget.child,
       ],
     );
@@ -110,48 +164,30 @@ class _AnimatedBackgroundState extends State<AnimatedBackground> with TickerProv
 
 class ParticleModel {
   Offset position;
-  Offset speed;
+  final Offset speed;
   final double radius;
   final Color color;
-  final double blur;
 
   ParticleModel({
     required this.position,
     required this.speed,
     required this.radius,
     required this.color,
-    required this.blur,
   });
 
   void update(Size size) {
     position += speed;
     
-    if (position.dx < -radius || position.dx > size.width + radius) {
-      speed = Offset(-speed.dx, speed.dy);
+    if (position.dx < 0) {
+      position = Offset(size.width, position.dy);
+    } else if (position.dx > size.width) {
+      position = Offset(0, position.dy);
     }
-
-    if (position.dy < -radius || position.dy > size.height + radius) {
-      speed = Offset(speed.dx, -speed.dy);
-    }
-
-    if (position.dx < -radius * 2 || position.dx > size.width + radius * 2 ||
-        position.dy < -radius * 2 || position.dy > size.height + radius * 2) {
-      final random = Random();
-      final side = random.nextInt(4);
-      switch (side) {
-        case 0:
-          position = Offset(random.nextDouble() * size.width, -radius);
-          break;
-        case 1:
-          position = Offset(size.width + radius, random.nextDouble() * size.height);
-          break;
-        case 2:
-          position = Offset(random.nextDouble() * size.width, size.height + radius);
-          break;
-        case 3:
-          position = Offset(-radius, random.nextDouble() * size.height);
-          break;
-      }
+    
+    if (position.dy < 0) {
+      position = Offset(position.dx, size.height);
+    } else if (position.dy > size.height) {
+      position = Offset(position.dx, 0);
     }
   }
 }
@@ -159,8 +195,13 @@ class ParticleModel {
 class ParticlePainter extends CustomPainter {
   final List<ParticleModel> particles;
   final double animation;
+  final bool isLowPerformance;
 
-  ParticlePainter(this.particles, this.animation);
+  ParticlePainter({
+    required this.particles,
+    required this.animation,
+    required this.isLowPerformance,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -169,26 +210,177 @@ class ParticlePainter extends CustomPainter {
       
       final paint = Paint()
         ..color = particle.color
-        ..style = PaintingStyle.fill
-        ..maskFilter = MaskFilter.blur(BlurStyle.normal, particle.blur);
+        ..style = PaintingStyle.fill;
+      
+      if (particle.radius > 2 && !isLowPerformance) {
+        paint.maskFilter = MaskFilter.blur(BlurStyle.normal, particle.radius * 0.5);
+      }
       
       canvas.drawCircle(particle.position, particle.radius, paint);
-    }
-    for (int i = 0; i < particles.length; i++) {
-      for (int j = i + 1; j < particles.length; j++) {
-        final distance = (particles[i].position - particles[j].position).distance;
-        if (distance < 150) {
-          final opacity = 1.0 - (distance / 150);
-          final paint = Paint()
-            ..color = Color.fromRGBO(255, 255, 255, opacity * 0.15)
-            ..strokeWidth = 1.5;
-          
-          canvas.drawLine(particles[i].position, particles[j].position, paint);
-        }
-      }
     }
   }
 
   @override
   bool shouldRepaint(ParticlePainter oldDelegate) => true;
+}
+
+class SubtleGradientPainter extends CustomPainter {
+  final double animation;
+  final bool isLowPerformance;
+  
+  SubtleGradientPainter({
+    required this.animation,
+    required this.isLowPerformance,
+  });
+  
+  @override
+  void paint(Canvas canvas, Size size) {
+    final width = size.width;
+    final height = size.height;
+    
+    final waveHeight = height * 0.05;
+    final waveCount = isLowPerformance ? 3 : 5;
+    
+    for (int i = 0; i < waveCount; i++) {
+      final phase = animation * 2 * pi + (i * pi / waveCount);
+      final amplitude = waveHeight * (1 - i / waveCount);
+      
+      final path = Path();
+      path.moveTo(0, height * (0.3 + 0.1 * i) + amplitude * sin(phase));
+      
+      for (double x = 0; x <= width; x += width / 100) {
+        final y = height * (0.3 + 0.1 * i) + 
+                 amplitude * sin(phase + (x / width) * 4 * pi);
+        path.lineTo(x, y);
+      }
+      
+      path.lineTo(width, height);
+      path.lineTo(0, height);
+      path.close();
+      
+      canvas.drawPath(
+        path, 
+        Paint()
+          ..shader = LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color(0xFF7B2CBF).withOpacity(0.1 - 0.02 * i),
+              Color(0xFF240046).withOpacity(0),
+            ],
+          ).createShader(Rect.fromLTWH(0, height * (0.3 + 0.1 * i), width, height * 0.7))
+          ..style = PaintingStyle.fill
+      );
+    }
+    
+    if (!isLowPerformance) {
+      final starCount = 30;
+      final random = Random(42);
+      
+      for (int i = 0; i < starCount; i++) {
+        final x = random.nextDouble() * width;
+        final y = random.nextDouble() * height * 0.7;
+        final size = random.nextDouble() * 1.5 + 0.5;
+        
+        final starPhase = animation * 2 * pi + (i * 0.2);
+        final opacity = 0.1 + 0.1 * sin(starPhase);
+        
+        final starPaint = Paint()
+          ..color = Colors.white.withOpacity(opacity)
+          ..style = PaintingStyle.fill;
+        
+        canvas.drawCircle(Offset(x, y), size, starPaint);
+      }
+    }
+  }
+  
+  @override
+  bool shouldRepaint(SubtleGradientPainter oldDelegate) => 
+      oldDelegate.animation != animation;
+}
+
+class NebulaPainter extends CustomPainter {
+  final double animation;
+  final bool isLowPerformance;
+  
+  NebulaPainter({
+    required this.animation,
+    required this.isLowPerformance,
+  });
+  
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (isLowPerformance) return;
+    
+    final width = size.width;
+    final height = size.height;
+    final random = Random(42);
+    
+    final nebulaCount = 3;
+    
+    for (int i = 0; i < nebulaCount; i++) {
+      final phase = animation * 2 * pi + (i * 2 * pi / nebulaCount);
+      
+      final centerX = width * (0.3 + 0.4 * sin(phase * 0.2));
+      final centerY = height * (0.3 + 0.2 * cos(phase * 0.3));
+      final radius = width * (0.15 + 0.05 * sin(phase * 0.5));
+      
+      final colors = [
+        i == 0 
+            ? Color(0xFF7B2CBF).withOpacity(0.03)
+            : i == 1 
+                ? Color(0xFF3A0CA3).withOpacity(0.03)
+                : Color(0xFF5A189A).withOpacity(0.03),
+        Colors.transparent,
+      ];
+      
+      final nebulaPaint = Paint()
+        ..shader = RadialGradient(
+          colors: colors,
+          stops: const [0.0, 1.0],
+        ).createShader(Rect.fromLTWH(
+          centerX - radius, 
+          centerY - radius, 
+          radius * 2, 
+          radius * 2
+        ))
+        ..style = PaintingStyle.fill
+        ..blendMode = BlendMode.plus;
+      
+      canvas.drawCircle(Offset(centerX, centerY), radius, nebulaPaint);
+      
+      final smallNebulaCount = 5;
+      
+      for (int j = 0; j < smallNebulaCount; j++) {
+        final smallPhase = phase + (j * 2 * pi / smallNebulaCount);
+        final distance = radius * 0.7;
+        
+        final smallX = centerX + distance * cos(smallPhase);
+        final smallY = centerY + distance * sin(smallPhase);
+        final smallRadius = radius * (0.2 + 0.1 * sin(phase * 0.7 + j));
+        
+        final smallNebulaPaint = Paint()
+          ..shader = RadialGradient(
+            colors: [
+              colors[0].withOpacity(0.02),
+              Colors.transparent,
+            ],
+            stops: const [0.0, 1.0],
+          ).createShader(Rect.fromLTWH(
+            smallX - smallRadius, 
+            smallY - smallRadius, 
+            smallRadius * 2, 
+            smallRadius * 2
+          ))
+          ..style = PaintingStyle.fill
+          ..blendMode = BlendMode.plus;
+        
+        canvas.drawCircle(Offset(smallX, smallY), smallRadius, smallNebulaPaint);
+      }
+    }
+  }
+  
+  @override
+  bool shouldRepaint(NebulaPainter oldDelegate) => 
+      oldDelegate.animation != animation;
 }

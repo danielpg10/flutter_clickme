@@ -15,43 +15,69 @@ class HomeScreen extends StatelessWidget {
     return Scaffold(
       body: AnimatedBackground(
         child: SafeArea(
-          child: SingleChildScrollView(
-            child: Column(
-              children: [
-                const SizedBox(height: 20),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     Icon(
                       Icons.link,
                       color: Theme.of(context).colorScheme.primary,
-                      size: 32,
+                      size: 24,
                     ),
                     const SizedBox(width: 8),
                     Text(
                       'ClickMe',
-                      style: Theme.of(context).textTheme.displayLarge?.copyWith(
+                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                             color: Theme.of(context).colorScheme.primary,
+                            fontWeight: FontWeight.bold,
                           ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 20),
-                const ProfileHeader(),
-                Container(
-                  height: isDesktop ? 450 : 350,
-                  width: double.infinity,
-                  padding: const EdgeInsets.only(top: 20),
-                  child: LinkCarousel(links: AppConstants.socialLinks),
+              ),
+              
+              Expanded(
+                child: SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  child: Column(
+                    children: [
+                      const ProfileHeader(),
+                      
+                      Container(
+                        height: isDesktop ? 450 : 350,
+                        width: double.infinity,
+                        padding: const EdgeInsets.only(top: 10),
+                        child: LinkCarousel(links: AppConstants.socialLinks),
+                      ),
+                      
+                      SizedBox(height: isDesktop ? 40 : 20),
+                    ],
+                  ),
                 ),
-                const SizedBox(height: 40),
-                Text(
+              ),
+              
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.3),
+                  border: Border(
+                    top: BorderSide(
+                      color: Colors.white.withOpacity(0.1),
+                      width: 1,
+                    ),
+                  ),
+                ),
+                child: Text(
                   '© ${DateTime.now().year} Marlon Daniel Portuguez Gomez',
                   style: Theme.of(context).textTheme.bodyMedium,
+                  textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 20),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
